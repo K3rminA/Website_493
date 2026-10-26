@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, MouseEvent, useEffect, useState } from 'react'
 
 const EMAIL = 'kerminadavid@icloud.com'
 
@@ -108,7 +108,8 @@ function ProjectVisual({ kind }: { kind: string }) {
 }
 
 export default function App() {
-  const [powered, setPowered] = useState(true)
+  const [view, setView] = useState<'front' | 'back'>('front')
+  const [angle, setAngle] = useState({ x: 0, y: 0 })
   const [searchOpen, setSearchOpen] = useState(false)
 
   useEffect(() => {
@@ -122,6 +123,11 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  function tilt(event: MouseEvent<HTMLDivElement>) {
+    const box = event.currentTarget.getBoundingClientRect()
+    setAngle({ x: ((event.clientX - box.left) / box.width - 0.5) * 2, y: ((event.clientY - box.top) / box.height - 0.5) * 2 })
+  }
 
   function contact(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -167,16 +173,16 @@ export default function App() {
               <code><span>$</span> whoami<br />kermina_david · EE · NJIT Honors &apos;27<br /><span>$</span> current_status<br /><b>● designing a custom PCB for the Verdura sensor node</b></code>
             </div>
           </div>
-          <div className={`hero-board ${powered ? 'powered' : ''}`}>
-            <div className="board-label"><span>SENSOR NODE</span><b>ESP32</b></div>
-            <div className="pcb">
-              <span className="trace t1" /><span className="trace t2" /><span className="trace t3" /><span className="trace t4" />
-              <i className="chip">ESP32<small>dual-core</small></i>
-              <i className="part resistor">1kΩ</i><i className="part capacitor">10μF</i>
-              <i className="pin p1" /><i className="pin p2" /><i className="pin p3" /><i className="led" />
+          <div className="hero-board">
+            <div className="board-label"><span>HUB &amp; NODE · CAD</span><b>VERDURA</b></div>
+            <div className="stage" onMouseMove={tilt} onMouseLeave={() => setAngle({ x: 0, y: 0 })}>
+              <div className="stage-panel" style={{ transform: `perspective(1000px) rotateY(${angle.x * 9}deg) rotateX(${-angle.y * 7}deg)` }}>
+                <img className={view === 'front' ? 'on' : ''} src="/hub-front.png" alt="Verdura hub and sensor node enclosures, front view" />
+                <img className={view === 'back' ? 'on' : ''} src="/hub-back.png" alt="Verdura hub and sensor node enclosures, back view" />
+              </div>
             </div>
-            <button onClick={() => setPowered((value) => !value)} aria-pressed={powered}><i /> {powered ? 'NODE ONLINE' : 'POWER NODE'}</button>
-            <div className="readout"><span>VCC<br /><b>{powered ? '3.30 V' : '0.00 V'}</b></span><span>CLOCK<br /><b>{powered ? '240 MHz' : '—'}</b></span><span>STATUS<br /><b>{powered ? 'NOMINAL' : 'IDLE'}</b></span></div>
+            <div className="view-toggle">{(['front', 'back'] as const).map((v) => <button key={v} onClick={() => setView(v)} aria-pressed={view === v}><i /> {v.toUpperCase()}</button>)}</div>
+            <div className="readout"><span>VIEW<br /><b>{view.toUpperCase()}</b></span><span>SOURCE<br /><b>CAD RENDER</b></span><span>ENCLOSURE<br /><b>HUB + NODE</b></span></div>
           </div>
           <a className="scroll-cue" href="#projects">SCROLL <span>↓</span></a>
         </section>
