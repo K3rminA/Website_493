@@ -7,6 +7,10 @@ function Arrow({ up = false }: { up?: boolean }) {
   return <svg aria-hidden="true" viewBox="0 0 24 24"><path d={up ? 'M7 17 17 7M8 7h9v9' : 'M5 12h14M14 7l5 5-5 5'} /></svg>
 }
 
+function LogoMark() {
+  return <svg className="mark" aria-hidden="true" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0b0d0f" /><rect x=".5" y=".5" width="63" height="63" rx="13.5" stroke="#272c31" strokeWidth="1.5" /><path d="M21 15v34M24 34 43 18" stroke="#eeeae1" strokeWidth="5" strokeLinecap="round" /><path d="M24 34 44 49" stroke="#ff6b35" strokeWidth="5" strokeLinecap="round" /><circle cx="46" cy="15.5" r="3.6" fill="#ff6b35" stroke="none" /></svg>
+}
+
 const projects = [
   {
     name: 'Verdura Automations',
@@ -342,7 +346,7 @@ export default function App() {
       <Cursor />
       <a className="skip" href="#main">Skip to content</a>
       <header>
-        <a className="logo" href="#top">kermina<span>.</span>david</a>
+        <a className="logo" href="#top"><LogoMark /><em className="word">kermina<span>.</span>david</em></a>
         <nav>
           <a href="#projects"><b>01</b> Projects</a>
           <a href="#experience"><b>02</b> Experience</a>
@@ -443,7 +447,7 @@ export default function App() {
             <button type="submit">Send <Arrow /></button>
           </form>
         </div>
-        <div className="shell footer-bottom"><a className="logo" href="#top">kermina<span>.</span>david</a><span>Electrical engineering · Software · Assistive tech</span><div><a href="https://github.com/K3rminA">GitHub</a><a href="https://www.linkedin.com/in/kermina-david">LinkedIn</a><a href={`mailto:${EMAIL}`}>Email</a></div></div>
+        <div className="shell footer-bottom"><a className="logo" href="#top"><LogoMark /><em className="word">kermina<span>.</span>david</em></a><span>Electrical engineering · Software · Assistive tech</span><div><a href="https://github.com/K3rminA">GitHub</a><a href="https://www.linkedin.com/in/kermina-david">LinkedIn</a><a href={`mailto:${EMAIL}`}>Email</a></div></div>
       </footer>
     </div>
   )
