@@ -283,10 +283,88 @@ function SpaceVisual() {
 function ProjectVisual({ kind }: { kind: string }) {
   if (kind === 'verdura') return <DashVisual />
   if (kind === 'space') return <SpaceVisual />
-  if (kind === 'ar') {
-    return <div className="project-visual"><div className="window-bar"><i /><i /><i /><span>fusion-care / ar session</span></div><div className="access-ui"><span>ROLE-BASED ACCESS</span><p><b>clinician</b><em>patient record</em><u>granted</u></p><p><b>front desk</b><em>patient record</em><u className="off">denied</u></p><p><b>clinician</b><em>3D call</em><u>live</u></p></div></div>
-  }
-  return <div className="project-visual"><div className="window-bar"><i /><i /><i /><span>prosthetic-arm / joints</span></div><div className="scope-grid"><svg viewBox="0 0 500 160" preserveAspectRatio="xMidYMid meet"><path className="arm" d="M90 130 150 130M120 130 120 90 215 52 320 78 400 40" /><circle cx="120" cy="90" r="7" /><circle cx="215" cy="52" r="7" /><circle cx="320" cy="78" r="7" /><circle className="claw" cx="400" cy="40" r="10" /></svg><span>3-DOF · SENSOR + AI</span></div></div>
+  if (kind === 'ar') return <ARVisual />
+  return <ArmVisual />
+}
+
+
+const AR_ROWS: [string, string, string, boolean][] = [['clinician', 'patient record', 'granted', true], ['front desk', 'patient record', 'denied', false], ['clinician', '3D call', 'live', true]]
+
+function ARVisual() {
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setI((v) => (v + 1) % AR_ROWS.length), 1800)
+    return () => clearInterval(id)
+  }, [])
+  const live = i === 2
+  return (
+    <div className="project-visual">
+      <div className="window-bar"><i /><i /><i /><span>fusion-care / ar session · demo</span></div>
+      <div className="access-ui">
+        <span>ROLE-BASED ACCESS</span>
+        {AR_ROWS.map(([role, res, st, ok], k) => <p key={k} className={k === i ? 'active' : ''}><b>{role}</b><em>{res}</em><u className={ok ? '' : 'off'}>{k === i ? st : '···'}</u></p>)}
+        <div className={live ? 'call live' : 'call'}><i /><i /><i /><i /> {live ? '3D CALL LIVE' : 'CHECKING ACCESS'}</div>
+      </div>
+    </div>
+  )
+}
+
+function ArmVisual() {
+  const [t, setT] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setT((v) => v + 0.04), 40)
+    return () => clearInterval(id)
+  }, [])
+  const bx = 110, by = 138, L1 = 88, L2 = 88
+  const tx = bx + 125 + Math.cos(t * 1.1) * 55
+  const ty = by - 62 + Math.sin(t * 1.7) * 34
+  const dx = tx - bx, dy = ty - by
+  const d = Math.min(Math.hypot(dx, dy), L1 + L2 - 1)
+  const a = Math.atan2(dy, dx)
+  const c = Math.acos((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))
+  const th1 = a - c
+  const ex = bx + L1 * Math.cos(th1), ey = by + L1 * Math.sin(th1)
+  const hx = bx + d * Math.cos(a), hy = by + d * Math.sin(a)
+  const th2 = Math.atan2(hy - ey, hx - ex)
+  const open = 0.35 + 0.3 * Math.sin(t * 3)
+  const claw = (s: number) => `M${hx} ${hy}l${Math.cos(th2 + s * open) * 20} ${Math.sin(th2 + s * open) * 20}`
+  const deg = (r: number) => Math.round((r * 180) / Math.PI)
+  return (
+    <div className="project-visual">
+      <div className="window-bar"><i /><i /><i /><span>prosthetic-arm / kinematics</span></div>
+      <div className="scope-grid">
+        <svg viewBox="0 0 500 160" preserveAspectRatio="xMidYMid meet">
+          <path className="arm-base" d={`M${bx - 28} ${by + 10}H${bx + 28}`} />
+          <path className="arm-link" d={`M${bx} ${by}L${ex} ${ey}L${hx} ${hy}`} />
+          <path className="arm-claw" d={`${claw(1)}${claw(-1)}`} />
+          <circle cx={bx} cy={by} r="7" /><circle cx={ex} cy={ey} r="7" /><circle className="claw" cx={hx} cy={hy} r="5" />
+          <circle className="target" cx={tx} cy={ty} r="11" />
+        </svg>
+        <span>θ1 {deg(th1)}° · θ2 {deg(th2 - th1)}° · SENSOR + AI TARGET</span>
+      </div>
+    </div>
+  )
+}
+
+function ArchDiagram() {
+  const box = (x: number, y: number, w: number, h: number, title: string, sub: string, hub = false) => (
+    <g key={title + y}><rect className={hub ? 'hubbox' : ''} x={x} y={y} width={w} height={h} rx="8" /><text className="at1" x={x + 12} y={y + h / 2 - 3}>{title}</text><text className="at2" x={x + 12} y={y + h / 2 + 13}>{sub}</text></g>
+  )
+  return (
+    <svg className="arch" viewBox="0 0 560 380" role="img" aria-label="System diagram: sensor nodes send readings to a Raspberry Pi hub, which feeds a dashboard, cloud database and mobile app">
+      {[45, 125, 205].map((y) => <path key={y} className="flow" d={`M160 ${y + 29}C200 ${y + 29} 200 150 236 150`} />)}
+      {[75, 175, 275].map((y) => <path key={y} className="flow" d={`M352 150C390 150 390 ${y} 420 ${y}`} />)}
+      <path className="flow up" d="M292 300V222" />
+      {[16, 96, 176].map((y, i) => box(10, y, 150, 58, `NODE ${i + 1}`, 'ESP32 · battery'))}
+      <g><rect className="hubbox" x="232" y="100" width="124" height="120" rx="8" /><text className="at1" x="244" y="132">HUB</text><text className="at2" x="244" y="154">Raspberry Pi</text><text className="at2" x="244" y="172">Node.js · SQLite</text><text className="at2" x="244" y="190">mDNS discovery</text></g>
+      {box(420, 40, 130, 70, 'DASHBOARD', 'React · TypeScript')}
+      {box(420, 140, 130, 70, 'CLOUD', 'Supabase (moving)')}
+      {box(420, 240, 130, 70, 'MOBILE APP', 'in development')}
+      {box(232, 300, 124, 52, 'WEATHER API', 'outside conditions')}
+      <text className="at3" x="10" y="270">soil moisture · soil + air temp</text>
+      <text className="at3" x="10" y="286">humidity · light · battery · fan</text>
+    </svg>
+  )
 }
 
 function tiltCard(e: ReactMouse<HTMLElement>) {
@@ -354,6 +432,7 @@ export default function App() {
         </nav>
         <div className="header-actions">
           <button className="search-button" onClick={() => setSearchOpen(true)}><span>⌕</span> Search <kbd>⌘K</kbd></button>
+          <a className="contact-button hide-sm" href="/Kermina_David_Resume.pdf" download>Resume ↓</a>
           <a className="contact-button" href="#contact">Get in touch</a>
         </div>
         <i className="progress" style={{ transform: `scaleX(${prog})` }} />
@@ -363,6 +442,7 @@ export default function App() {
         <div className="command" onMouseDown={(e) => e.stopPropagation()}>
           <div><span>⌕</span><input autoFocus placeholder="Jump to a section..." aria-label="Search sections" /></div>
           <a href="#projects" onClick={() => setSearchOpen(false)}><b>01</b> Projects <span>↵</span></a>
+          <a href="#verdura" onClick={() => setSearchOpen(false)}><b>→</b> Verdura case study <span>↵</span></a>
           <a href="#experience" onClick={() => setSearchOpen(false)}><b>02</b> Experience <span>↵</span></a>
           <a href="#about" onClick={() => setSearchOpen(false)}><b>03</b> About <span>↵</span></a>
           <a href="#contact" onClick={() => setSearchOpen(false)}><b>04</b> Contact <span>↵</span></a>
@@ -376,7 +456,7 @@ export default function App() {
             <div className="status"><i /> Co-founder &amp; CTO, Verdura Automations</div>
             <h1>I build hardware and software people <em>actually use</em>.</h1>
             <p>Electrical engineering student at NJIT&apos;s Albert Dorman Honors College. I connect sensors, embedded systems and cloud software to the people who depend on them, from greenhouse growers to children in therapy.</p>
-            <div className="hero-actions"><a className="primary" href="#projects">See the work <Arrow /></a><a href="#about">About me <Arrow up /></a></div>
+            <div className="hero-actions"><a className="primary" href="#projects">See the work <Arrow /></a><a href="#about">About me <Arrow up /></a><a href="/Kermina_David_Resume.pdf" download>Resume ↓</a></div>
             <div className="terminal">
               <div className="terminal-top"><i /><i /><i /><span>session</span></div>
               <Boot />
@@ -402,6 +482,26 @@ export default function App() {
               <p className="stack-line">{project.stack}</p>
               <small><i /> {project.status}</small>
             </article>)}
+          </div>
+        </section>
+
+        <section className="section shell" id="verdura">
+          <span className="eyebrow reveal"><i /> Case study</span>
+          <div className="case">
+            <div>
+              <h2 className="reveal">Verdura: automation<br />small growers<br />can afford.</h2>
+              <div className="capabilities case-steps">
+                <div className="reveal"><h3><span>01</span>The problem</h3><p>Small greenhouse operators rarely adopt automation. In 60+ interviews with growers across Morris County, NJ, three things kept coming up: cost, ease of use, and trust.</p></div>
+                <div className="reveal"><h3><span>02</span>Requirements</h3><p>Those answers became engineering requirements: affordable parts, simple installation, repairable components, and compatibility with equipment growers already own.</p></div>
+                <div className="reveal"><h3><span>03</span>The system</h3><p>ESP32 sensor nodes measure soil moisture, soil and air temperature, humidity, light and battery, and can control a fan. A Raspberry Pi hub stores the readings and serves a React dashboard, so growers can see conditions in different parts of the greenhouse.</p></div>
+                <div className="reveal"><h3><span>04</span>What&apos;s next</h3><p>A custom PCB for the sensor node, a backend move from SQLite to Supabase after a cost-per-user comparison with AWS, and a mobile app built by a four-person team I lead.</p></div>
+              </div>
+              <div className="chips reveal"><span>$30K raised</span><span>NJIT Propelus I-Corps</span><span>1st · IEEE AP-S poster</span></div>
+            </div>
+            <div className="arch-panel reveal" style={{ '--d': '0.15s' } as CSSProperties}>
+              <div className="board-label"><span>SYSTEM ARCHITECTURE</span><b>LIVE DATA FLOW</b></div>
+              <ArchDiagram />
+            </div>
           </div>
         </section>
 

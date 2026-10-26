@@ -10,5 +10,8 @@
   "title": "Kermina David \u00b7 Electrical Engineer & Builder",
   "icons": {
     "icon": "/favicon.svg"
+  },
+  "openGraph": {
+    "image": "/og.png"
   }
 }

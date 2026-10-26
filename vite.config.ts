@@ -92,7 +92,9 @@ function figmaSiteConfiguration(config: FigmaSiteConfiguration): Plugin {
   const description = config.description ?? ''
   // Imported HTML keeps its own favicon; new Makes default to the Make product icon.
   const favicon = config.icons?.icon ?? '/favicon.svg'
-  const socialImage = config.openGraph?.image ?? ''
+  const rawSocialImage = config.openGraph?.image ?? ''
+  const siteOrigin = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : ''
+  const socialImage = rawSocialImage.startsWith('/') ? siteOrigin + rawSocialImage : rawSocialImage
   const language = sanitizeHtmlValue(config.language) || 'en'
   const googleAnalyticsId = sanitizeHtmlValue(config.analytics?.googleAnalyticsId)
   const headStart = config.customScripts?.headStart ?? ''

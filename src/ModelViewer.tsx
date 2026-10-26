@@ -230,9 +230,7 @@ function buildModel() {
   pivot.position.set(0, 0.8, -0.45)
   const lid = new THREE.Mesh(new RoundedBoxGeometry(1.14, 0.08, 0.96, 4, 0.04), green)
   lid.position.set(0, 0.04, 0.48)
-  const inner = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.02, 0.8), std(0x2f7335, 0.4))
-  inner.position.set(0, -0.005, 0.48)
-  pivot.add(lid, inner)
+  pivot.add(lid)
   node.add(nodeBody, vent, pivot)
 
   root.add(hub, node)
@@ -254,12 +252,9 @@ const TARGETS: Record<Focus, { t: THREE.Vector3; d: number }> = {
 export default function ModelViewer() {
   const mount = useRef<HTMLDivElement>(null)
   const focusRef = useRef<Focus>('both')
-  const lidRef = useRef(true)
   const [focus, setFocus] = useState<Focus>('both')
-  const [lid, setLid] = useState(true)
 
   useEffect(() => { focusRef.current = focus }, [focus])
-  useEffect(() => { lidRef.current = lid }, [lid])
 
   useEffect(() => {
     const el = mount.current
@@ -302,8 +297,8 @@ export default function ModelViewer() {
     Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 })
     sun.shadow.bias = -0.0004
     scene.add(sun)
-    const rim = new THREE.PointLight(0xff6b35, 18, 14)
-    rim.position.set(-4, 2, -3)
+    const rim = new THREE.PointLight(0xff6b35, 5, 16)
+    rim.position.set(-5, 2.5, -4)
     scene.add(rim)
 
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.4 }))
@@ -319,9 +314,8 @@ export default function ModelViewer() {
     ring2.position.y = 0.002
     scene.add(ring2)
 
-    const { root, pivot } = buildModel()
+    const { root } = buildModel()
     scene.add(root)
-    pivot.rotation.x = -1.2
 
     const resize = () => {
       const w = el.clientWidth
@@ -348,8 +342,6 @@ export default function ModelViewer() {
       const d = tmp.length() + (f.d - tmp.length()) * 0.06
       controls.target.lerp(f.t, 0.06)
       camera.position.copy(controls.target).add(tmp.setLength(d))
-      const want = lidRef.current ? -1.2 : 0
-      pivot.rotation.x += (want - pivot.rotation.x) * 0.08
       ring.rotation.z += 0.002
       controls.update()
       renderer.render(scene, camera)
@@ -383,9 +375,8 @@ export default function ModelViewer() {
       <div className="stage3d" ref={mount} aria-label="Interactive 3D model of the Verdura hub and sensor node" />
       <div className="view-toggle">
         {(['both', 'hub', 'node'] as const).map((v) => <button key={v} onClick={() => setFocus(v)} aria-pressed={focus === v}><i /> {v.toUpperCase()}</button>)}
-        <button onClick={() => setLid((o) => !o)} aria-pressed={lid}><i /> LID {lid ? 'OPEN' : 'CLOSED'}</button>
       </div>
-      <div className="readout"><span>FOCUS<br /><b>{focus.toUpperCase()}</b></span><span>NODE LID<br /><b>{lid ? 'OPEN' : 'CLOSED'}</b></span><span>MODEL<br /><b>APPROX. CAD</b></span></div>
+      <div className="readout"><span>FOCUS<br /><b>{focus.toUpperCase()}</b></span><span>PARTS<br /><b>HUB + NODE</b></span><span>MODEL<br /><b>APPROX. CAD</b></span></div>
     </div>
   )
 }
