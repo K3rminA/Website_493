@@ -44,6 +44,22 @@ const projects = [
     status: 'NJIT Prosthetics Club',
     kind: 'arm',
   },
+  {
+    name: 'Multimodal Drone Detection',
+    year: 'Fall 2026',
+    line: 'A three-camera rig (RGB, thermal and event) for aerial detection on a Jetson, built for the NJIT Drone Design Entrepreneurship Challenge. An earlier version tracked cars on a road.',
+    stack: 'Jetson · Homography · Computer vision',
+    status: 'In progress',
+    kind: 'drone',
+  },
+  {
+    name: 'Prudential Hackathons',
+    year: '2025 – 2026',
+    line: 'Led two teams: a parking and desk booking system that pairs IoT sensors with a backend API, and an AI prompting learning platform now being deployed by PGIM.',
+    stack: 'IoT sensors · Backend APIs · AWS',
+    status: 'Hackathon projects',
+    kind: 'office',
+  },
 ]
 
 const experience = [
@@ -138,17 +154,52 @@ const BOOT = ['hardware', 'firmware', 'cloud', 'application']
 const DOTS = 16
 const NOW = ['designing the Verdura sensor-node PCB', 'leading a four-person mobile app team', 'building therapy games for kids with CP']
 
+const go = (sel: string) => document.querySelector(sel)?.scrollIntoView({ behavior: 'smooth' })
+
+function run(raw: string): { out: string[]; action?: () => void } {
+  const c = raw.toLowerCase().replace(/\s+/g, ' ')
+  switch (c) {
+    case 'help': return { out: ['help       list commands', 'whoami     short intro', 'projects   jump to my work', 'verdura    open the case study', 'skills     what I work with', 'resume     download my resume', 'contact    get in touch', 'github     open my GitHub', 'clear      clear the screen'] }
+    case 'whoami': return { out: ['Kermina David · EE @ NJIT Honors', 'CTO @ Verdura Automations'] }
+    case 'ls': return { out: ['projects/  experience/  about/  resume.pdf'] }
+    case 'projects': return { out: ['opening projects…'], action: () => go('#projects') }
+    case 'verdura': return { out: ['opening the Verdura case study…'], action: () => go('#verdura') }
+    case 'contact': return { out: ['opening contact…'], action: () => go('#contact') }
+    case 'resume': return { out: ['downloading resume…'], action: () => { const a = document.createElement('a'); a.href = '/Kermina_David_Resume.pdf'; a.download = ''; a.click() } }
+    case 'github': return { out: ['opening github.com/K3rminA…'], action: () => { window.open('https://github.com/K3rminA', '_blank', 'noopener') } }
+    case 'skills': return { out: [stack.slice(0, 9).join(' · '), 'ESP32 · Raspberry Pi · AWS · Docker · …'] }
+    case 'sudo hire kermina': return { out: ['[sudo] permission granted.', 'contact: ' + EMAIL] }
+    default: return { out: [`command not found: ${raw}`, "try 'help'"] }
+  }
+}
+
+type Line = { cmd: string; out: string[] }
+
 function Boot() {
   const cmd = 'boot --profile kermina'
   const total = cmd.length + 8 + BOOT.length * (DOTS + 4)
   const [tick, setTick] = useState(0)
+  const [hist, setHist] = useState<Line[]>([])
+  const [val, setVal] = useState('')
+  const box = useRef<HTMLElement>(null)
+  const input = useRef<HTMLInputElement>(null)
   useEffect(() => {
     const id = setInterval(() => setTick((t) => { if (t >= total) { clearInterval(id); return t } return t + 1 }), 38)
     return () => clearInterval(id)
   }, [total])
+  useEffect(() => { if (box.current) box.current.scrollTop = box.current.scrollHeight }, [hist, tick])
   const done = tick >= total
+  function submit() {
+    const c = val.trim()
+    setVal('')
+    if (!c) return
+    if (c.toLowerCase() === 'clear') { setHist([]); return }
+    const r = run(c)
+    setHist((h) => [...h, { cmd: c, out: r.out }])
+    r.action?.()
+  }
   return (
-    <code>
+    <code ref={box} onClick={() => input.current?.focus({ preventScroll: true })}>
       <span>$</span> {cmd.slice(0, tick)}{tick < cmd.length && <span className="caret" />}<br />
       {BOOT.map((name, k) => {
         const s = cmd.length + 8 + k * (DOTS + 4)
@@ -156,7 +207,11 @@ function Boot() {
         if (tick <= s) return null
         return <em key={name}>{'  '}{name.padEnd(12, ' ')}{'.'.repeat(d)} {d >= DOTS && <b>ok</b>}<br /></em>
       })}
-      {done && <><span>$</span> now<br /><b>● <Typewriter lines={NOW} /></b></>}
+      {done && <>
+        <span>$</span> now<br /><b>● <Typewriter lines={NOW} /></b><br />
+        {hist.map((l, i) => <span key={i} className="hist"><span>$</span> {l.cmd}<br />{l.out.map((o) => <em key={o}>{o}<br /></em>)}</span>)}
+        <span>$</span> <input ref={input} className="term-input" value={val} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} placeholder="type help" aria-label="Terminal input. Type help for commands." autoComplete="off" autoCapitalize="off" spellCheck={false} />
+      </>}
     </code>
   )
 }
@@ -280,9 +335,75 @@ function SpaceVisual() {
   )
 }
 
+
+function Pane({ kind, x, y, t }: { kind: 'RGB' | 'THERMAL' | 'EVENT'; x: number; y: number; t: number }) {
+  const px = x * 100, py = y * 70
+  const trail = Array.from({ length: 16 }, (_, k) => {
+    const tt = t - k * 0.06
+    return [50 + 32 * Math.cos(tt * 0.9) + Math.sin(k * 7.3) * 3, 35 + 20 * Math.sin(tt * 1.4) + Math.cos(k * 5.1) * 3, k]
+  })
+  return (
+    <div className="pane">
+      <svg viewBox="0 0 100 70" preserveAspectRatio="none">
+        <rect width="100" height="70" className={`bg-${kind}`} />
+        {kind === 'RGB' && <g className="drone-shape"><path d={`M${px - 6} ${py}H${px + 6}M${px} ${py - 6}V${py + 6}`} /><circle cx={px - 6} cy={py - 6} r="2" /><circle cx={px + 6} cy={py - 6} r="2" /><circle cx={px - 6} cy={py + 6} r="2" /><circle cx={px + 6} cy={py + 6} r="2" /></g>}
+        {kind === 'THERMAL' && <g><circle cx={px} cy={py} r="14" className="heat-outer" /><circle cx={px} cy={py} r="8" className="heat-mid" /><circle cx={px} cy={py} r="3.5" className="heat-core" /></g>}
+        {kind === 'EVENT' && trail.map(([ex, ey, k]) => <circle key={k} cx={ex} cy={ey} r={1.4} className={k % 2 ? 'ev-a' : 'ev-b'} style={{ opacity: 1 - k / 16 }} />)}
+        <rect className="bbox" x={px - 10} y={py - 10} width="20" height="20" />
+      </svg>
+      <span>{kind}</span>
+    </div>
+  )
+}
+
+function DroneVisual() {
+  const [t, setT] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setT((v) => v + 0.05), 50)
+    return () => clearInterval(id)
+  }, [])
+  const x = 0.5 + 0.32 * Math.cos(t * 0.9), y = 0.5 + 0.29 * Math.sin(t * 1.4)
+  return (
+    <div className="project-visual">
+      <div className="window-bar"><i /><i /><i /><span>jetson / 3-camera rig · demo</span></div>
+      <div className="drone-ui">
+        <div className="panes">{(['RGB', 'THERMAL', 'EVENT'] as const).map((k) => <Pane key={k} kind={k} x={x} y={y} t={t} />)}</div>
+        <div className="fused"><svg viewBox="0 0 300 70" preserveAspectRatio="none"><path className="fuse-grid" d="M0 35H300M150 0V70" /><circle className="fuse-ring" cx={x * 300} cy={y * 70} r="14" /><path className="fuse-cross" d={`M${x * 300 - 20} ${y * 70}H${x * 300 + 20}M${x * 300} ${y * 70 - 20}V${y * 70 + 20}`} /></svg><span>FUSED · HOMOGRAPHY-ALIGNED · TRACK 01</span></div>
+      </div>
+    </div>
+  )
+}
+
+function OfficeVisual() {
+  const [desks, setDesks] = useState<number[]>([1, 0, 2, 1, 0, 0, 1, 2, 0, 1, 1, 0])
+  const [cars, setCars] = useState<number[]>([1, 1, 0, 1, 0, 0, 1, 0])
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDesks((d) => d.map((v, i) => (Math.random() < 0.12 ? (v + 1 + (i % 2)) % 3 : v)))
+      setCars((c) => c.map((v) => (Math.random() < 0.15 ? 1 - v : v)))
+    }, 1100)
+    return () => clearInterval(id)
+  }, [])
+  const free = desks.filter((v) => v === 0).length
+  return (
+    <div className="project-visual">
+      <div className="window-bar"><i /><i /><i /><span>desk-booking / floor 3 · demo</span></div>
+      <div className="office-ui">
+        <div className="office-head"><span>DESKS · LIVE FROM IoT SENSORS</span><b>{free} free</b></div>
+        <div className="desks">{desks.map((v, i) => <i key={i} className={v === 1 ? 'occ' : v === 2 ? 'booked' : ''} />)}</div>
+        <div className="office-head"><span>PARKING</span><b>{cars.filter((c) => !c).length} open</b></div>
+        <div className="cars">{cars.map((v, i) => <i key={i} className={v ? 'occ' : ''} />)}</div>
+        <div className="legend"><span><i /> free</span><span><i className="occ" /> occupied</span><span><i className="booked" /> booked</span></div>
+      </div>
+    </div>
+  )
+}
+
 function ProjectVisual({ kind }: { kind: string }) {
   if (kind === 'verdura') return <DashVisual />
   if (kind === 'space') return <SpaceVisual />
+  if (kind === 'drone') return <DroneVisual />
+  if (kind === 'office') return <OfficeVisual />
   if (kind === 'ar') return <ARVisual />
   return <ArmVisual />
 }
@@ -464,10 +585,26 @@ export default function App() {
     }
   }, [])
 
-  function contact(event: FormEvent<HTMLFormElement>) {
+  const [sent, setSent] = useState<'idle' | 'sending' | 'ok'>('idle')
+
+  async function contact(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = new FormData(event.currentTarget)
-    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent('Hello from your portfolio')}&body=${encodeURIComponent(`${data.get('message')}\n\nFrom: ${data.get('email')}`)}`
+    const form = event.currentTarget
+    const data = new FormData(form)
+    setSent('sending')
+    try {
+      const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: data.get('email'), message: data.get('message'), company: data.get('company') }) })
+      const json = await res.json()
+      if (res.ok && json.ok) {
+        setSent('ok')
+        form.reset()
+        return
+      }
+      throw new Error('not sent')
+    } catch {
+      setSent('idle')
+      window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent('Hello from your portfolio')}&body=${encodeURIComponent(`${data.get('message')}\n\nFrom: ${data.get('email')}`)}`
+    }
   }
 
   return (
@@ -578,7 +715,7 @@ export default function App() {
           <div className="reveal">
             <span className="eyebrow"><i /> About</span>
             <h2>Engineering for<br />the person on the<br />other end.</h2>
-            <img className="portrait" src="/headshot.jpg" alt="Portrait of Kermina David" />
+            <img className="portrait" src="/headshot.jpg" alt="Portrait of Kermina David" width="340" height="340" loading="lazy" />
           </div>
           <div className="about-copy reveal" style={{ '--d': '0.15s' } as CSSProperties}>
             <p>I&apos;m a B.S. Electrical Engineering student at NJIT&apos;s Albert Dorman Honors College on a full scholarship, with a minor in Grand Challenges. My interest is technology that improves lives, from prosthetics and assistive devices to automation for small farms.</p>
@@ -595,7 +732,9 @@ export default function App() {
           <form onSubmit={contact}>
             <label htmlFor="email">Email</label><input id="email" name="email" type="email" placeholder="you@company.com" required />
             <label htmlFor="message">Message</label><textarea id="message" name="message" rows={3} placeholder="What are we building?" required />
-            <button type="submit">Send <Arrow /></button>
+            <input className="hp" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+            <button type="submit" disabled={sent === 'sending'}>{sent === 'sending' ? 'Sending…' : 'Send'} <Arrow /></button>
+            {sent === 'ok' && <p className="form-note" role="status">Sent. I&apos;ll reply soon.</p>}
           </form>
         </div>
         <div className="shell footer-bottom"><a className="logo" href="#top"><LogoMark /><em className="word">kermina<span>.</span>david</em></a><span>Electrical engineering · Software · Assistive tech</span><div><a href="https://github.com/K3rminA">GitHub</a><a href="https://www.linkedin.com/in/kermina-david">LinkedIn</a><a href={`mailto:${EMAIL}`}>Email</a></div></div>

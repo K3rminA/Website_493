@@ -253,6 +253,7 @@ export default function ModelViewer() {
   const mount = useRef<HTMLDivElement>(null)
   const focusRef = useRef<Focus>('both')
   const [focus, setFocus] = useState<Focus>('both')
+  const [fallback, setFallback] = useState(false)
 
   useEffect(() => { focusRef.current = focus }, [focus])
 
@@ -260,7 +261,13 @@ export default function ModelViewer() {
     const el = mount.current
     if (!el) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    } catch {
+      setFallback(true)
+      return
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFShadowMap
@@ -372,7 +379,7 @@ export default function ModelViewer() {
   return (
     <div className="hero-board">
       <div className="board-label"><span>HUB &amp; NODE · 3D</span><b>DRAG TO ROTATE</b></div>
-      <div className="stage3d" ref={mount} aria-label="Interactive 3D model of the Verdura hub and sensor node" />
+      {fallback ? <div className="stage3d fb"><img src="/hub-front.png" alt="Verdura hub and sensor node enclosures" /></div> : <div className="stage3d" ref={mount} aria-label="Interactive 3D model of the Verdura hub and sensor node" />}
       <div className="view-toggle">
         {(['both', 'hub', 'node'] as const).map((v) => <button key={v} onClick={() => setFocus(v)} aria-pressed={focus === v}><i /> {v.toUpperCase()}</button>)}
       </div>
