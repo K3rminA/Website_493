@@ -1,0 +1,14 @@
+{
+  "description": "Portfolio of Kermina David: electrical engineering student at NJIT, co-founder of Verdura Automations, building IoT, embedded and assistive technology.",
+  "robots": {
+    "index": true
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  },
+  "title": "Kermina David \u00b7 Electrical Engineer & Builder",
+  "icons": {
+    "icon": "/Logo.ico"
+  }
+}
