@@ -288,22 +288,73 @@ function ProjectVisual({ kind }: { kind: string }) {
 }
 
 
-const AR_ROWS: [string, string, string, boolean][] = [['clinician', 'patient record', 'granted', true], ['front desk', 'patient record', 'denied', false], ['clinician', '3D call', 'live', true]]
+const AR_PHASES = [1600, 1000, 3400, 4600]
+const AR_LABELS = ['IRIS SCAN', 'ACCESS GRANTED', 'PATIENT RECORD', '3D CALL · LIVE']
 
 function ARVisual() {
-  const [i, setI] = useState(0)
+  const [ph, setPh] = useState(0)
   useEffect(() => {
-    const id = setInterval(() => setI((v) => (v + 1) % AR_ROWS.length), 1800)
-    return () => clearInterval(id)
-  }, [])
-  const live = i === 2
+    const t = setTimeout(() => setPh((p) => (p + 1) % AR_PHASES.length), AR_PHASES[ph])
+    return () => clearTimeout(t)
+  }, [ph])
   return (
     <div className="project-visual">
-      <div className="window-bar"><i /><i /><i /><span>fusion-care / ar session · demo</span></div>
-      <div className="access-ui">
-        <span>ROLE-BASED ACCESS</span>
-        {AR_ROWS.map(([role, res, st, ok], k) => <p key={k} className={k === i ? 'active' : ''}><b>{role}</b><em>{res}</em><u className={ok ? '' : 'off'}>{k === i ? st : '···'}</u></p>)}
-        <div className={live ? 'call live' : 'call'}><i /><i /><i /><i /> {live ? '3D CALL LIVE' : 'CHECKING ACCESS'}</div>
+      <div className="window-bar"><i /><i /><i /><span>fusion-care / ar glasses · demo</span></div>
+      <div className="ar-stage">
+        <div className="ar-status"><i />{AR_LABELS[ph]}</div>
+        <div className="ar-note">ILLUSTRATION · DEMO DATA</div>
+        <svg className={`ar ph${ph}`} viewBox="0 0 400 260" role="img" aria-label="Illustration: a doctor wearing AR glasses unlocks a patient record with an iris scan, then a remote colleague appears as a hologram for a 3D call">
+          <defs>
+            <circle id="pHead" cx="0" cy="-150" r="22" />
+            <path id="pBody" d="M-40 0L-35 -92Q-25 -110 0 -112Q25 -110 35 -92L40 0Z" />
+            <clipPath id="holoClip"><use href="#pHead" /><use href="#pBody" /></clipPath>
+            <clipPath id="irisClip"><circle r="13" /></clipPath>
+            <linearGradient id="arBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor="#ff6b35" stopOpacity=".3" /><stop offset="1" stopColor="#ff6b35" stopOpacity="0" /></linearGradient>
+            <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1.4" fill="#ff6b35" fillOpacity=".45" /></pattern>
+          </defs>
+          <path className="floor" d="M10 232H390" />
+
+          <g transform="translate(95 232)">
+            <use href="#pBody" className="doc" /><use href="#pHead" className="doc" />
+            <path className="doc-detail" d="M-8 -112L-15 -66M8 -112L15 -66M-26 -90Q-30 -50 0 -46Q30 -50 26 -90" />
+            <path className="doc-detail" d="M-19 -151H-25M19 -151H25" />
+            <rect className="lens" x="-19" y="-156" width="38" height="10" rx="5" />
+          </g>
+
+          <g className="g-iris" transform="translate(165 82)">
+            <path className="beam-dot" d="M-48 0H-26" />
+            <circle className="ring-bg" r="22" /><circle className="ring-prog" r="22" transform="rotate(-90)" />
+            <circle className="iris" r="13" /><circle className="iris" r="8" /><circle className="pupil" r="3.5" />
+            <g clipPath="url(#irisClip)"><line className="scanline" x1="-14" x2="14" y1="0" y2="0" /></g>
+          </g>
+          <g className="g-grant" transform="translate(165 82)">
+            <path className="beam-dot" d="M-48 0H-26" />
+            <circle className="ok" r="22" /><path className="check" d="M-9 1L-3 7L9 -6" />
+          </g>
+
+          <g className="g-rec">
+            <path className="beam-dot" d="M118 82Q165 84 203 106" />
+            <g transform="translate(0 22) skewY(-4)">
+              <rect className="panel" x="205" y="35" width="180" height="130" rx="8" />
+              <text className="ar-t" x="219" y="55">PATIENT RECORD</text>
+              <circle className="av" cx="226" cy="82" r="12" /><rect className="sk" x="246" y="73" width="84" height="6" rx="3" /><rect className="sk" x="246" y="85" width="56" height="5" rx="2.5" />
+              {[['HR', '72', 219], ['BP', '118/76', 275], ['SpO₂', '98%', 331]].map(([l, v, x]) => <g key={l}><rect className="vt" x={x} y="104" width="48" height="28" rx="4" /><text className="vl" x={Number(x) + 6} y="115">{l}</text><text className="vv" x={Number(x) + 6} y="127">{v}</text></g>)}
+              <path className="ecg" d="M219 150H248L254 141L260 158L266 138L272 150H300L306 144L312 154L318 150H371" />
+            </g>
+          </g>
+
+          <g className="g-holo">
+            <path className="cone" d="M246 226L354 226L324 62L276 62Z" />
+            <ellipse className="plat" cx="300" cy="226" rx="62" ry="12" /><ellipse className="plat2" cx="300" cy="226" rx="40" ry="7" />
+            <path className="beam-dot" d="M118 82Q190 52 262 84" />
+            <g transform="translate(300 224) scale(.9)">
+              <g className="holo-fig"><use href="#pBody" /><use href="#pHead" /></g>
+              <g clipPath="url(#holoClip)"><rect className="holo-band" x="-50" y="-180" width="100" height="14" /></g>
+              <rect className="lens" x="-19" y="-156" width="38" height="10" rx="5" />
+            </g>
+            <g className="rchip" transform="translate(246 36)"><rect width="108" height="20" rx="10" /><circle className="live-dot" cx="13" cy="10" r="3" /><text x="24" y="13.5">REMOTE · LIVE</text></g>
+          </g>
+        </svg>
       </div>
     </div>
   )
